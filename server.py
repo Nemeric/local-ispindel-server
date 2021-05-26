@@ -14,34 +14,29 @@ RUN = True
 
 FILE_NAME_FORMAT = "ispindel_data_{}.csv"
 
-
-
 server_sock = socket(AF_INET, SOCK_STREAM)
 server_sock.bind((HOST, PORT))
 server_sock.listen(5)
 
 
 def handler(client_sock, addr):
-    global RECEIVED
-
     seconds_since_e = int(time.time())
     print(str(datetime.datetime.fromtimestamp(seconds_since_e)))
 
     S = ""
     while True:
         data = client_sock.recv(BUFF)
-        if not data: break  # client closed connection
+        if not data:
+            break
         msg = data.decode("utf-8")
-        S += (msg)
-
-
+        S += msg
 
     ispindel_data = json.loads(S)
     ispindel_data["date"] = seconds_since_e
     file_name = FILE_NAME_FORMAT.format(ispindel_data["name"])
 
     print("\t", ispindel_data["name"], addr)
-    print("\tT°: {}\n\tGravity: {}\n\tAngle: {}\n\tBattery: {}"\
+    print("\tT°: {}\n\tGravity: {}\n\tAngle: {}\n\tBattery: {}" \
           .format(*[ispindel_data[i] for i in ["temperature",
                                                "gravity",
                                                "angle",
@@ -56,6 +51,7 @@ def handler(client_sock, addr):
     print("\tSaved")
 
     client_sock.close()
+
 
 def server_thread(server_sock):
     print("Server started")
@@ -85,7 +81,8 @@ def double_plot(ax, x, y, z, y_label, z_label):
 
     ax.minorticks_on()
     ax.grid(b=True, which='major', color='k', linestyle='-')
-    ax.grid(b=True, which='minor', color=(0.25,0.25,0.25), linestyle=':')
+    ax.grid(b=True, which='minor', color=(0.25, 0.25, 0.25), linestyle=':')
+
 
 def plot_csv(name):
     file_name = FILE_NAME_FORMAT.format(name)
@@ -97,7 +94,7 @@ def plot_csv(name):
 
     try:
         t = df_ispindel_data["date"].to_numpy()
-        t = (t-t[0])/3600/24
+        t = (t - t[0]) / 3600 / 24
         gravity = df_ispindel_data["gravity"].to_list()
         temperature = df_ispindel_data["temperature"].to_list()
         angle = df_ispindel_data["angle"].to_list()
@@ -110,15 +107,15 @@ def plot_csv(name):
     double_plot(ax1, t, temperature, gravity, "Temperature (°C)", "Gravity (°P)")
     ax1.set_title(file_name)
 
-
     ax2 = plt.subplot(212)
     double_plot(ax2, t, angle, battery, "Angle (°)", "Battery (V)")
 
     plt.tight_layout()
     plt.show()
 
+
 print("Running on:", (HOST, PORT))
-_thread.start_new_thread(server_thread, (server_sock, ))
+_thread.start_new_thread(server_thread, (server_sock,))
 
 time.sleep(2)
 user_input = input(">>")
@@ -127,9 +124,7 @@ while user_input != "close":
     user_input = input(">>")
     if user_input == "close": break
 
-
 RUN = False
-
 
 server_sock.close()
 print("Socket closed")
